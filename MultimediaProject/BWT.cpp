@@ -1,7 +1,5 @@
 #include "BWT.h"
 
-
-
 BWT::BWT(string url):file(url,ios::binary)
 {
 	getText();
@@ -68,7 +66,6 @@ void BWT::rle()
 		count = 0;
 	}
 }
-
 
 BWT::~BWT()
 {

@@ -21,10 +21,9 @@ class BWT
 	wifstream file;
 
 public:
-	BWT(string url);	
+	BWT(string url);
 	void getText();
 	void prepareRotations();
 	void rle();
 	~BWT();
 };
-
