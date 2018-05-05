@@ -111,11 +111,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Arithmetic.cpp" />
+    <ClCompile Include="BWT.cpp" />
     <ClCompile Include="Huffman.cpp" />
+    <ClCompile Include="MTF.cpp" />
+    <ClCompile Include="RL.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Arithmetic.h" />
+    <ClInclude Include="BWT.h" />
+    <ClInclude Include="Headers.h" />
     <ClInclude Include="Huffman.h" />
+    <ClInclude Include="MTF.h" />
+    <ClInclude Include="RL.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

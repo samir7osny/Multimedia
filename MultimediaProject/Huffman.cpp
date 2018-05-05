@@ -2,47 +2,24 @@
 
 
 
-Huffman::Huffman(string fileName, string fileExtension) :fileName(fileName), fileExtension(fileExtension), file(fileName + "." + fileExtension, std::ios::binary)
+Huffman::Huffman() 
 {
-	/*
-		file->seekg(0, std::ios::end);
-		inputText.reserve(file->tellg());
-		file->seekg(0, std::ios::beg);
-
-		inputText.assign((std::istreambuf_iterator<char>(*file)),
-			std::istreambuf_iterator<char>());
-		// // cout << inputText;*/
 	averageCodeWord = 0;
 	maxCodeLength = 0;
 	numberOfChar = 0;
 	numberOfNodes = 0;
 }
 
-void Huffman::encode(string originalFile, string compressedFile)
+deque<unsigned char> Huffman::encode(deque<wchar_t> inputText)
 {
 	clock_t Start = clock();
-
-	if (originalFile != "")
-	{
-		file.close();
-		file.open(originalFile , std::ios::binary);
-	}
-	if (compressedFile == "")
-	{
-		compressedFile = fileName + "_compressed.bin";
-	}
-	outFile.open(compressedFile, ios::out | ios::binary);
-	outFile.clear();
 	outBuffer = 0;
 	outBufferCounter = 0;
-	getText();
+	this->inputText = inputText;
+	fillFreqMap();
 	buildTree();
 	forward();
 	reverse(Nodes[0]);
-	// cout << numberOfChar << endl;
-	// cout << codeCharMap.size() << endl;
-	// cout << maxCodeLength << endl;
-	// cout << numberOfNodes << endl;
 	
 	// out number of bits required to store the number of characters
 	unsigned char numberOfBitsForNumberOfChars = ceil(log2(numberOfChar) + 1);
@@ -88,7 +65,7 @@ void Huffman::encode(string originalFile, string compressedFile)
 			else
 			{
 				buffer(1);
-				buffer((int)(j),3);
+				buffer((int)(j + 1),3);
 				for (int k = j; k >= 0; k--)
 				{
 					buffer(tempMaskSet[k]);
@@ -119,37 +96,16 @@ void Huffman::encode(string originalFile, string compressedFile)
 	}
 	closeBuffer();
 
-	file.close();
-	outFile.close();
-
 	cout << "Time to Compress: " << clock() - Start << endl;
+	return Output;
 }
 
-void Huffman::decode(string CompressedFile, string DecompressedFile)
+deque<wchar_t> Huffman::decode(deque<unsigned char> inputText)
 {
 	clock_t Start = clock();
 	
-	if (CompressedFile == "")
-	{
-		CompressedFile = fileName + "_compressed.bin";
-	}
-	if (DecompressedFile == "")
-	{
-		DecompressedFile = fileName + "_decompressed.txt";
-	}
-	wifstream compressedFile(CompressedFile, ios::binary);
-	wofstream decompressedFile(DecompressedFile, ios::binary);
-
-	// apply BOM-sensitive UTF-16 facet
-	decompressedFile.imbue(std::locale(decompressedFile.getloc(),
-		new std::codecvt_utf8<wchar_t>));
-
-	streampos fileSizePos = compressedFile.tellg();
-	compressedFile.seekg(0, ios::end);
-	fileSizePos = compressedFile.tellg() - fileSizePos;
-	int fileSize = fileSizePos;
-	compressedFile.close();
-	compressedFile.open(CompressedFile , ios::binary);
+	deque<wchar_t> DOutput;
+	int fileSize = inputText.size();
 	int takenBytes = 0;
 	int counter = 0;
 	unsigned char numberOfBitsForNumberOfChars = 0;
@@ -169,7 +125,8 @@ void Huffman::decode(string CompressedFile, string DecompressedFile)
 	numberOfChar = 0;
 
 
-	for (wchar_t c; compressedFile.get(c); ) {
+	for (int j = 0; j < fileSize;j++) {
+		wchar_t c = inputText[j];
 		takenBytes++;
 		bitset<8> temp(c);
 		for (int i = 7; i >= 0; i--)
@@ -221,7 +178,7 @@ void Huffman::decode(string CompressedFile, string DecompressedFile)
 								}
 								else
 								{
-									numberOfTakenBits++;
+									numberOfTakenBits;
 								}
 							}
 						}
@@ -259,16 +216,16 @@ void Huffman::decode(string CompressedFile, string DecompressedFile)
 				if (decodeCounter == 0 || counter <= decodeCounter + 3) {
 					decodeCounter = decodeCounter == 0 ? counter - 1 : decodeCounter;
 					skipBits = (skipBits << 1) | (temp[i]);
-					if (decodeCounter!= 0 && counter == decodeCounter + 3)
+					/*if (decodeCounter!= 0 && counter == decodeCounter + 3)
 					{
 						skipBits = 8 - skipBits;
-					}
+					}*/
 				}
-				else if (takenBytes != fileSize || (takenBytes == fileSize && skipBits < i + 1)) {
+				else if (takenBytes != fileSize || (takenBytes == fileSize && skipBits != i + 1)) {
 					HuffmanCode += (temp[i] ? "1" : "0");
 					map<string, wchar_t>::iterator it = codeCharMap.find(HuffmanCode);
 					if (it != codeCharMap.end()) {
-						decompressedFile << it->second;
+						DOutput.push_back(it->second);
 						HuffmanCode = "";
 					}
 					//// cout << temp[i];
@@ -276,10 +233,9 @@ void Huffman::decode(string CompressedFile, string DecompressedFile)
 			}
 		}
 	}
-	compressedFile.close();
-	decompressedFile.close();
 
 	cout << "Time to Decompress: " << clock() - Start << endl;
+	return DOutput;
 }
 
 void Huffman::buildTree()
@@ -310,18 +266,11 @@ void Huffman::sortLastElement(vector<Node*>& v)
 	}
 }
 
-void Huffman::getText()
+void Huffman::fillFreqMap()
 {
-	// apply BOM-sensitive UTF-16 facet
-	file.imbue(std::locale(file.getloc(),
-		new std::codecvt_utf8<wchar_t>));
-	// read 
-	for (wchar_t c; file.get(c); ) {
-		//std::// // cout << std::showbase << std::hex << c << '\n';
-		if (c != 65279) {
-			inputText.push_back(c);
-			freqMap[c]++;
-		}
+	for (int i = 0; i < inputText.size(); i++)
+	{
+		freqMap[inputText[i]]++;
 	}
 }
 
@@ -436,7 +385,7 @@ void Huffman::excuteBuffer()
 {
 	if (outBufferCounter == 8)
 	{
-		outFile << outBuffer;
+		Output.push_back(outBuffer);
 		outBufferCounter = 0;
 		outBuffer = 0;
 	}

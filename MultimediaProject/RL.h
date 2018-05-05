@@ -1,15 +1,12 @@
 #pragma once
 #include "Headers.h"
 
-class BWT
+class RL
 {
-	vector<deque<wchar_t>>rotations;
-
 public:
-	BWT();
-	BWT(deque<wchar_t> input);
+	RL();
 	deque<wchar_t> encode(deque<wchar_t> inputText);
 	deque<wchar_t> decode(deque<wchar_t> inputText);
-	~BWT();
+	~RL();
 };
 

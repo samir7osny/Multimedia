@@ -1,16 +1,5 @@
 #pragma once
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <streambuf>
-#include <deque>
-#include <map>
-#include <locale>
-#include <queue>
-#include <codecvt>
-#include <bitset>
-#include <algorithm>
-using namespace std;
+#include "Headers.h"
 
 struct Node {
 	wchar_t character;
@@ -19,33 +8,12 @@ struct Node {
 	Node* left;
 	Node* right;
 };
-//
-//class CompareProb
-//{
-//public:
-//	bool operator()(Node n1, Node n2) {
-//		return n1.probabilty>n2.probabilty;
-//	}
-//};
-//
-//template <class T, class S, class C>
-//S& Container(priority_queue<T, S, C>& q) {
-//	struct HackedQueue : private priority_queue<T, S, C> {
-//		static S& Container(priority_queue<T, S, C>& q) {
-//			return q.*&HackedQueue::c;
-//		}
-//	};
-//	return HackedQueue::Container(q);
-//}
 
 class Huffman
 {
 private:
-	vector<wchar_t> inputText;
-	string fileName;
-	string fileExtension;
-	wifstream file;
-	ofstream outFile;
+	deque<wchar_t> inputText;
+	deque<unsigned char> Output;
 	double averageCodeWord;
 	double maxCodeLength;
 	int numberOfChar;
@@ -56,13 +24,11 @@ private:
 
 	map<wchar_t,int> freqMap;
 	map<wchar_t, string> charCodeMap;
-	//priority_queue<Node, deque<Node>, CompareProb> Nodes;
 	vector<Node*> Nodes;
-	//vector<bool>encoded;
 
 	void buildTree();
 	void sortLastElement(vector<Node*>& v);
-	void getText();
+	void fillFreqMap();
 	void findNodeByChar(Node*parent, wchar_t c,Node*&found);
 	void forward();
 	void reverse(Node* parent);
@@ -73,9 +39,9 @@ private:
 	void closeBuffer();
 	void excuteBuffer();
 public:
-	Huffman(string fileName = "", string fileExtension = "txt");
-	void encode(string originalFile = "", string compressedFile = "");
-	void decode(string CompressedFile = "", string DecompressedFile = "");
+	Huffman();
+	deque<unsigned char> encode(deque<wchar_t> inputText);
+	deque<wchar_t> decode(deque<unsigned char> inputText);
 	~Huffman();
 };
 

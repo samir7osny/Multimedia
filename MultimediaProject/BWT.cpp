@@ -1,29 +1,22 @@
 #include "BWT.h"
 
 
-
-BWT::BWT(string url):file(url,ios::binary)
+BWT::BWT()
 {
-	getText();
-	prepareRotations();
-	rle();
+
 }
 
-void BWT::getText()
+BWT::BWT(deque<wchar_t> input)
 {
-	// apply BOM-sensitive UTF-16 facet
-	file.imbue(std::locale(file.getloc(),
-		new std::codecvt_utf8<wchar_t, 0xfff, std::consume_header>));
-	// read     
-	for (wchar_t c; file.get(c); ) {
-		//std::cout << std::showbase << std::hex << c << '\n';
-		inputText.push_back(c);
-		freqMap[c]++;
-	}
+
 }
 
-void BWT::prepareRotations()
+deque<wchar_t> BWT::encode(deque<wchar_t> inputText)
 {
+	deque<wchar_t> bwtOutput;
+	//flag to know the last element
+	inputText.push_back(0);
+
 	rotations.push_back(inputText);
 
 	//make rotations
@@ -41,7 +34,7 @@ void BWT::prepareRotations()
 	//BWT output = encode the rotations "Last char of every rotation"
 	for (int i = 0; i < rotations.size(); i++) {
 		wchar_t charc = rotations[i][rotations[i].size()-1];
-		bwtOutput+=charc;
+		bwtOutput.push_back(charc);
 		/*
 		if (find(encodedString.begin(), encodedString.end(), charc) == encodedString.end()) {
 			encodedString.push_back(charc);
@@ -49,26 +42,63 @@ void BWT::prepareRotations()
 				encodedString.push_back(freqMap[charc]-1);
 		}*/
 	}
+
+	return bwtOutput;
 }
 
-void BWT::rle()
+deque<wchar_t> BWT::decode(deque<wchar_t> inputText)
 {
-	//encodedString = encode BWT output string with Run Length Encoding(RLE)
-	string encodedString;
-	unsigned char count = 0;
-	for (int i = 0, j = 1; i < bwtOutput.size() - 1; i++, j++) {
-		if (bwtOutput[i] == bwtOutput[j]) {
-			count++;
-			continue;
-		}
-		encodedString += bwtOutput[i];
-		if (count >= 1) {
-			encodedString += count;
-		}
-		count = 0;
-	}
-}
+	//bwtOutput
+	deque<wchar_t> bwtOutputSorted = inputText;
+	sort(bwtOutputSorted.begin(), bwtOutputSorted.end());
 
+	deque<int> indexMap;
+	map<wchar_t, int> charFreq;
+	for (int i = 0; i < inputText.size(); i++)
+	{
+		int tempIndex = charFreq[inputText[i]]++;
+		for (int j = 0; j < bwtOutputSorted.size(); j++)
+		{
+			if (bwtOutputSorted[j] == inputText[i])
+			{
+				indexMap.push_back(j + tempIndex);
+				break;
+			}
+		}
+	}
+
+	deque<wchar_t> result;
+	int currentIndex = 0;
+	wchar_t temp = inputText[currentIndex];
+	while (temp != '\0')
+	{
+		result.push_front(temp);
+		currentIndex = indexMap[currentIndex];
+		temp = inputText[currentIndex];
+	}
+
+	/*wofstream decompressedFile("BWTOutputDe.txt", ios::out | ios::binary);
+	decompressedFile.clear();
+	decompressedFile.imbue(std::locale(decompressedFile.getloc(),
+		new std::codecvt_utf8<wchar_t, 0xfff, std::consume_header>));
+	for (int i = 0; i < result.size(); i++)
+	{
+		decompressedFile << result[i];
+	}
+	decompressedFile.close();
+
+	decompressedFile.open("BWTOutput.txt", ios::out | ios::binary);
+	decompressedFile.clear();
+	decompressedFile.imbue(std::locale(decompressedFile.getloc(),
+		new std::codecvt_utf8<wchar_t, 0xfff, std::consume_header>));
+	for (int i = 0; i < bwtOutput.size(); i++)
+	{
+		decompressedFile << bwtOutput[i];
+	}
+	decompressedFile.close();*/
+
+	return result;
+}
 
 BWT::~BWT()
 {
