@@ -1,4 +1,4 @@
-#include "Huffman.h"
+﻿#include "Huffman.h"
 #include "BWT.h"
 #include "MTF.h"
 #include "RL.h"
@@ -18,18 +18,26 @@ int main() {
 	huffman2.decode("DataSet_2_compressed.bin", "DataSet_2_decompressed.txt");*/
 	
 	deque<wchar_t> inputText;
-	inputText = getText("DataSet_1.txt");
+	string fileName = "DataSet_1.txt";
+	inputText = getText(fileName);
 	BWT bwt;
 	MTF mtf;
 	RL rle;
 	Huffman huf;
+
+	clock_t Start = clock();
 	deque<wchar_t> bwtEncode = bwt.encode(inputText);
+	cout << "bwtEncode Completed ..." << endl;
 	deque<wchar_t> mtfEncode = mtf.encode(bwtEncode, charList, true);
+	cout << "mtfEncode Completed ..." << endl;
 	deque<wchar_t> rleEncode  = rle.encode(mtfEncode);
+	cout << "rleEncode Completed ..." << endl;
 	deque<unsigned char> hufEncode = huf.encode(rleEncode);
+	cout << "hufEncode Completed ..." << endl;
+	cout << "Time to Compress: " << clock() - Start << endl;
 
 
-	ofstream outFile("test3.bin", ios::out | ios::binary);
+	ofstream outFile(fileName + ".bin", ios::out | ios::binary);
 	outFile.clear();
 	for (int i = 0; i < hufEncode.size(); i++)
 	{
@@ -37,7 +45,7 @@ int main() {
 	}
 	outFile.close();
 	
-	ifstream file("test3.bin", ios::binary);
+	ifstream file(fileName + ".bin", ios::binary);
 	file.clear();
 	deque<unsigned char> temp;
 	for (char c; file.get(c); ) {
@@ -45,12 +53,18 @@ int main() {
 	}
 	file.close();
 
-	deque<wchar_t> hufDecode = huf.decode(hufEncode);
+	Start = clock();
+	deque<wchar_t> hufDecode = huf.decode(temp);
+	cout << "hufDecode Completed ..." << endl;
 	deque<wchar_t> rleDecode  = rle.decode(hufDecode);
+	cout << "rleDecode Completed ..." << endl;
 	deque<wchar_t> mtfDecode = mtf.decode(rleDecode, charList, true);
+	cout << "mtfDecode Completed ..." << endl;
 	deque<wchar_t> bwtDecode = bwt.decode(mtfDecode);
+	cout << "bwtDecode Completed ..." << endl;
+	cout << "Time to Decompress: " << clock() - Start << endl;
 
-	wofstream outFile2("test3_decompressed.txt", ios::out | ios::binary);
+	wofstream outFile2(fileName + "_decompressed.txt", ios::out | ios::binary);
 	outFile2.imbue(std::locale(outFile2.getloc(),
 		new std::codecvt_utf8<wchar_t>));
 	outFile2.clear();
@@ -71,7 +85,7 @@ deque<wchar_t> getText(string fileName)
 	wifstream file(fileName, std::ios::binary);
 	// apply BOM-sensitive UTF-16 facet
 	file.imbue(std::locale(file.getloc(),
-		new std::codecvt_utf8<wchar_t, 0xfff, std::consume_header>));
+		new std::codecvt_utf8<wchar_t>));
 	// read     
 
 	map<wchar_t,bool> charMap;

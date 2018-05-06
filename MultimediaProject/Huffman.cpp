@@ -12,7 +12,6 @@ Huffman::Huffman()
 
 deque<unsigned char> Huffman::encode(deque<wchar_t> inputText)
 {
-	clock_t Start = clock();
 	outBuffer = 0;
 	outBufferCounter = 0;
 	this->inputText = inputText;
@@ -21,20 +20,43 @@ deque<unsigned char> Huffman::encode(deque<wchar_t> inputText)
 	forward();
 	reverse(Nodes[0]);
 	
+
+	Output.clear();
 	// out number of bits required to store the number of characters
-	unsigned char numberOfBitsForNumberOfChars = ceil(log2(numberOfChar) + 1);
+	unsigned char numberOfBitsForNumberOfChars;
+	bitset<16> bitsTemp(numberOfChar);
+	for (int i = 15; i >= 0; i--)
+	{
+		if (bitsTemp[i] == 1)
+		{
+			numberOfBitsForNumberOfChars = i + 1;
+			break;
+		}
+	}
 	buffer((unsigned char)(numberOfBitsForNumberOfChars - 1), 4);
 
 	// number of charcters
 	buffer((int)numberOfChar, numberOfBitsForNumberOfChars);
 
 	// out number of max bits required to store the number of characters
-	unsigned char numberOfBitsOfMaxNumberOfCodeBits = ceil(log2(maxCodeLength) + 1);
-	buffer((unsigned char)(numberOfBitsOfMaxNumberOfCodeBits), numberOfBitsForNumberOfChars);
+	unsigned char numberOfBitsOfMaxNumberOfCodeBits;
+	bitset<16> bitsTemp2(maxCodeLength);
+	for (int i = 15; i >= 0; i--)
+	{
+		if (bitsTemp2[i] == 1)
+		{
+			numberOfBitsOfMaxNumberOfCodeBits = i + 1;
+			break;
+		}
+	}
+	buffer((int)(numberOfBitsOfMaxNumberOfCodeBits), numberOfBitsForNumberOfChars);
 
 	// out char code and its huffman code
+
+	int tempCounter = 0;
 	for (map<wchar_t, string>::iterator it = charCodeMap.begin(); it != charCodeMap.end(); ++it)
 	{
+		cout << ++tempCounter << endl;
 		// 15 14 13 12 11 10 9 8 || 7 6 5 4 3 2 1 0
 		// 0  1  2  3  4  5  6 7 || 7 6 5 4 3 2 1 X
 																								// wchar_t tempMask = 65535;
@@ -46,7 +68,7 @@ deque<unsigned char> Huffman::encode(deque<wchar_t> inputText)
 			if (tempMaskSet[j] == 1)
 				break;
 		}
-		if (j >= 8 && j != 15)	// To Ignore Technique
+		if (j >= 8/* && j != 15*/)	// To Ignore Technique
 		{
 			buffer(0); // For Ignore
 			buffer((int)(15 - j), 3); // Number of the bits will be ignored
@@ -56,25 +78,25 @@ deque<unsigned char> Huffman::encode(deque<wchar_t> inputText)
 			}
 		} 
 		else { // To Take Technique
-			if (j == 15) // Take all 16 bits :(
+			/*if (j == 15) // Take all 16 bits :(
 			{
 				buffer(1);
 				buffer((int)(0), 3); // Flag to git 16 bits
 				buffer((wchar_t)(it->first), 16);
 			}
 			else
-			{
+			{*/
 				buffer(1);
-				buffer((int)(j + 1),3);
+				buffer((int)(j),3);
 				for (int k = j; k >= 0; k--)
 				{
 					buffer(tempMaskSet[k]);
 				}
-			}
+			//}
 		}
 
 		// Write the huffman code
-		buffer((int)(it->second.size() - 1), numberOfBitsOfMaxNumberOfCodeBits);
+		buffer((int)(it->second.size()), numberOfBitsOfMaxNumberOfCodeBits);
 		buffer(it->second);
 	}
 
@@ -83,26 +105,29 @@ deque<unsigned char> Huffman::encode(deque<wchar_t> inputText)
 	{
 		bitsCounter += charCodeMap[inputText[i]].size();
 	}
-	int lastByte = bitsCounter % 8;
+	int lastByte = bitsCounter % 8 == 0 ? 8 : bitsCounter % 8;
 	// 0 1 2 3 4 5 6 7 
 	// 0 1 2 3 4 5 6 7
 
 	// Fix bits offset
-	lastByte = (lastByte - (8 - outBufferCounter)) < 0 ? (8 - ((8 - outBufferCounter) - lastByte)) : (lastByte - (8 - outBufferCounter));				// number of the bits will be taken in the last byte
-	buffer((int)lastByte, 3);
-	for (int i = 0; i < inputText.size(); i++)
+	for (int i = 0; i < 8 - outBufferCounter; i++)
+	{
+		lastByte = lastByte - 1 <= 0 ? 8 : --lastByte;
+	}
+	//lastByte = (lastByte - (8 - outBufferCounter)) < 0 ? (((8 - outBufferCounter) - lastByte)) : (lastByte - (8 - outBufferCounter));				// number of the bits will be taken in the last byte
+	buffer((int)lastByte - 1, 3);
+	int i;
+	for ( i = 0; i < inputText.size(); i++)
 	{
 		buffer(charCodeMap[inputText[i]]);
 	}
 	closeBuffer();
 
-	cout << "Time to Compress: " << clock() - Start << endl;
 	return Output;
 }
 
 deque<wchar_t> Huffman::decode(deque<unsigned char> inputText)
 {
-	clock_t Start = clock();
 	
 	deque<wchar_t> DOutput;
 	int fileSize = inputText.size();
@@ -119,13 +144,17 @@ deque<wchar_t> Huffman::decode(deque<unsigned char> inputText)
 	string code;
 	int charCounter = 0;
 	int decodeCounter = 0;
-	int skipBits = 0;
+	int lastByte = 0;
 	string HuffmanCode = "";
 	map<string, wchar_t> codeCharMap;
 	numberOfChar = 0;
-
+	int chr = 0;
+	map<wchar_t, string>::iterator it = charCodeMap.begin();
 
 	for (int j = 0; j < fileSize;j++) {
+		if (charCounter == 140) {
+			int y = 0;
+		}
 		wchar_t c = inputText[j];
 		takenBytes++;
 		bitset<8> temp(c);
@@ -172,14 +201,14 @@ deque<wchar_t> Huffman::decode(deque<unsigned char> inputText)
 							}
 							else
 							{
-								if (numberOfTakenBits == 0)
+								/*if (numberOfTakenBits == 0)
 								{
 									numberOfTakenBits = 16;
 								}
 								else
-								{
-									numberOfTakenBits;
-								}
+								{*/
+									numberOfTakenBits++;
+								//}
 							}
 						}
 					}
@@ -190,7 +219,7 @@ deque<wchar_t> Huffman::decode(deque<unsigned char> inputText)
 						numberOfCodeBits = (numberOfCodeBits << 1) | (temp[i]);
 						if (counter == charBeginCounter + 3 + numberOfTakenBits + numberOfBitsOfMaxNumberOfCodeBits)
 						{
-							numberOfCodeBits++;
+							numberOfCodeBits;
 						}
 					}
 					else if (counter <= charBeginCounter + 3 + numberOfTakenBits + numberOfBitsOfMaxNumberOfCodeBits + numberOfCodeBits) {
@@ -204,6 +233,13 @@ deque<wchar_t> Huffman::decode(deque<unsigned char> inputText)
 						}
 						if (counter == charBeginCounter + 3 + numberOfTakenBits + numberOfBitsOfMaxNumberOfCodeBits + numberOfCodeBits)
 						{
+							//cout << code << "==" << codeCharMap[code]<<endl;
+							/*if (charCodeMap[charUTF] != code)
+							{
+								int y = 0;
+							}*/
+							cout << it->first << endl;
+							it++;
 							codeCharMap[code] = charUTF;
 							charCounter++;
 							inChar = false;
@@ -215,13 +251,13 @@ deque<wchar_t> Huffman::decode(deque<unsigned char> inputText)
 			{
 				if (decodeCounter == 0 || counter <= decodeCounter + 3) {
 					decodeCounter = decodeCounter == 0 ? counter - 1 : decodeCounter;
-					skipBits = (skipBits << 1) | (temp[i]);
-					/*if (decodeCounter!= 0 && counter == decodeCounter + 3)
+					lastByte = (lastByte << 1) | (temp[i]);
+					if (decodeCounter!= 0 && counter == decodeCounter + 3)
 					{
-						skipBits = 8 - skipBits;
-					}*/
+						lastByte++;
+					}
 				}
-				else if (takenBytes != fileSize || (takenBytes == fileSize && skipBits != i + 1)) {
+				else if (takenBytes != fileSize || (takenBytes == fileSize && lastByte >= 8 - i)) {
 					HuffmanCode += (temp[i] ? "1" : "0");
 					map<string, wchar_t>::iterator it = codeCharMap.find(HuffmanCode);
 					if (it != codeCharMap.end()) {
@@ -234,7 +270,6 @@ deque<wchar_t> Huffman::decode(deque<unsigned char> inputText)
 		}
 	}
 
-	cout << "Time to Decompress: " << clock() - Start << endl;
 	return DOutput;
 }
 
@@ -297,7 +332,7 @@ void Huffman::forward()
 		newNode->right = Nodes[Nodes.size() - 1];
 		Nodes.pop_back();
 		newNode->probabilty = newNode->left->probabilty + newNode->right->probabilty;
-		// // cout << newNode->probabilty << endl;
+		cout << newNode->probabilty << endl;
 		Nodes.push_back(newNode);
 		sortLastElement(Nodes);
 	}
@@ -318,6 +353,18 @@ void Huffman::reverse(Node* parent/*,vector<bool>code*/)
 	}
 	if (parent->left == NULL&&parent->right == NULL) {
 		parent->code = parent->code == "" ? "0" : parent->code;
+		if (parent->code == "")
+		{
+			int y = 5;
+		}
+		if (parent->character == 0)
+		{
+			int y = 5;
+		}
+		if (parent->character > 30000)
+		{
+			int y = 0;
+		}
 		numberOfChar++;
 		// cout << "char:" << parent->character << "   binary:" << bitset<16>(parent->character) << "  code:" << parent->code;
 		averageCodeWord += parent->code.size() * parent->probabilty;
